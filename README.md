@@ -271,6 +271,33 @@ AutoMapper · xUnit + Moq · NLog · Swashbuckle (Swagger/OpenAPI) · `Backgroun
 
 ---
 
+## Deployment (Docker, beyond the base spec)
+
+> Not part of the assignment spec, which explicitly excludes Docker/cloud deploy — see
+> [`SPEC-COMPLIANCE.md`](SPEC-COMPLIANCE.md) → *Extensions beyond the base spec*.
+
+The root [`Dockerfile`](Dockerfile) builds the whole app — React client + API — into one
+image: a Node stage builds `carpool-client`, a .NET SDK stage publishes `Carpool.API`, and
+the final `aspnet:9.0` stage serves both from one process (the React build is copied into
+`wwwroot`). That means one container, one URL, one Render web service.
+
+```bash
+docker build -t carpool .
+docker run -p 8080:8080 \
+  -e Jwt__Key="$(openssl rand -base64 64)" \
+  -e DATABASE_URL="postgres://user:password@host:5432/dbname" \
+  carpool
+```
+
+Key differences from local dev, all in `Program.cs`: migrations run on startup in every
+environment (a container has no separate migration step); Swagger stays enabled in
+Production; `UseHttpsRedirection` is skipped outside Development (the platform's edge
+terminates TLS); and if `ConnectionStrings:CarpoolDb` is empty, a connection string is
+built from a `DATABASE_URL` env var (the `postgres://user:pass@host:port/db` shape most
+managed Postgres providers hand out) instead.
+
+---
+
 ## Submitting to GitHub
 
 The `.gitignore` already excludes `bin/`, `obj/`, `.vs/`, `logs/`, `*.log`,

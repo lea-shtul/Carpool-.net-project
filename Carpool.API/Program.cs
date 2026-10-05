@@ -32,6 +32,23 @@ try
 {
     logger.Info("Carpool API starting up.");
 
+    // Render (and most cloud Postgres providers) hand out a connection URI —
+    // postgres://user:password@host:port/database — rather than the key=value string
+    // Npgsql expects. SSL Mode=Require is needed for Render's managed Postgres, which
+    // only accepts TLS connections; Trust Server Certificate avoids shipping its CA bundle
+    // for what is, here, a student deployment rather than a hardened production one.
+    static string BuildConnectionStringFromDatabaseUrl(string databaseUrl)
+    {
+        var uri = new Uri(databaseUrl);
+        var userInfo = uri.UserInfo.Split(':', 2);
+        var username = Uri.UnescapeDataString(userInfo[0]);
+        var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+        var database = uri.AbsolutePath.TrimStart('/');
+
+        return $"Host={uri.Host};Port={uri.Port};Database={database};Username={username};" +
+               $"Password={password};SSL Mode=Require;Trust Server Certificate=true";
+    }
+
     var builder = WebApplication.CreateBuilder(args);
 
     // Route every ILogger<T> through NLog (spec §57).
@@ -88,8 +105,23 @@ try
     // EF Core / PostgreSQL. The connection string is read from configuration
     // (User Secrets in Development, environment variables otherwise) — never hard-coded
     // (spec §44, §48). DbContext is registered with the default Scoped lifetime (spec §53).
+    //
+    // Deployment extension: Render's managed Postgres only hands out a DATABASE_URL
+    // connection URI (postgres://user:pass@host:port/db), not a ready-made Npgsql
+    // key=value string, so when ConnectionStrings:CarpoolDb is left empty (as in the
+    // container image), fall back to building one from DATABASE_URL.
+    var connectionString = builder.Configuration.GetConnectionString("CarpoolDb");
+    if (string.IsNullOrWhiteSpace(connectionString))
+    {
+        var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+        if (!string.IsNullOrWhiteSpace(databaseUrl))
+        {
+            connectionString = BuildConnectionStringFromDatabaseUrl(databaseUrl);
+        }
+    }
+
     builder.Services.AddDbContext<CarpoolDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("CarpoolDb")));
+        options.UseNpgsql(connectionString));
 
     // Repositories and the unit of work (spec §52, §53). Registered Scoped — the same
     // lifetime as CarpoolDbContext, which they all depend on.
@@ -161,24 +193,25 @@ try
     var app = builder.Build();
 
     // Configure the HTTP request pipeline.
-    if (app.Environment.IsDevelopment())
-    {
-        // Apply any pending migrations on startup so the project runs immediately after
-        // database setup (spec §48). Development only, inside its own DI scope so we never
-        // hold a Scoped DbContext outside a scope (spec §53).
-        using (var scope = app.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<CarpoolDbContext>();
-            await db.Database.MigrateAsync();
-        }
 
-        app.UseSwagger();
-        app.UseSwaggerUI(options =>
-        {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Carpool API v1");
-            options.DocumentTitle = "Carpool API";
-        });
+    // Apply any pending migrations on startup in every environment — not just Development.
+    // The container deploy has no separate "run migrations" step, so the API applies its
+    // own schema on boot; inside its own DI scope so we never hold a Scoped DbContext
+    // outside a scope (spec §53).
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<CarpoolDbContext>();
+        await db.Database.MigrateAsync();
     }
+
+    // Swagger stays enabled in production too, so the deployed API is self-documenting
+    // at /swagger without a separate environment-gated build.
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Carpool API v1");
+        options.DocumentTitle = "Carpool API";
+    });
 
     // Middleware order matters (spec §56):
     //  - exception handling outermost, so it catches everything downstream;
@@ -189,12 +222,25 @@ try
     app.UseMiddleware<CorrelationIdMiddleware>();
     app.UseMiddleware<RequestLoggingMiddleware>();
 
-    app.UseHttpsRedirection();
+    // Render (and most PaaS hosts) terminate TLS at their own edge and forward plain HTTP
+    // to the container, so redirecting to HTTPS inside the container would just loop.
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseHttpsRedirection();
+    }
 
     app.UseAuthentication();
     app.UseAuthorization();
 
     app.MapControllers();
+
+    // Serve the built React app (copied into wwwroot by the Docker build) and let client-side
+    // routing own every path that isn't an API route or a real static file, so a hard refresh
+    // on e.g. /rides/3 still resolves to index.html instead of a 404 (spec extension — see
+    // the Dockerfile).
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
+    app.MapFallbackToFile("index.html");
 
     app.Run();
 }

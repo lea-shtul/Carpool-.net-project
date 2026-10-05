@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+
+# Not needed in the image and keeps the build context small / avoids leaking local secrets.
+.git/
+.vs/
+**/logs/
+**/*.user
+Carpool.API/appsettings.Development.json

@@ -18,6 +18,9 @@ logs/
 *.log
 internal-nlog*.txt
 
+# Docker build artifact — the React build is copied here only inside the image
+Carpool.API/wwwroot/
+
 # OS
 Thumbs.db
 .DS_Store
