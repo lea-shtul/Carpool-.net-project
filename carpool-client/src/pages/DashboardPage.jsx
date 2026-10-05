@@ -1,5 +1,5 @@
 import { CalendarCheck, HelpCircle, PlusCircle, Star } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getMyBookings } from '../api/bookings'
 import { getRatingsForUser } from '../api/ratings'
@@ -14,8 +14,15 @@ import { WavingHand } from '../components/common/WavingHand'
 import { RideCard } from '../components/rides/RideCard'
 import { SearchPanel } from '../components/rides/SearchPanel'
 import { useAuth } from '../hooks/useAuth'
+import { useInterval } from '../hooks/useInterval'
 import { formatDate, formatDateTime } from '../utils/format'
 import styles from './DashboardPage.module.css'
+
+// The backend's RideStatusBackgroundService reconciles ride status every 30s (e.g.
+// Scheduled -> InProgress once DepartureTime passes). Polling a little faster than that
+// keeps "Available Rides" from showing a ride that has in fact already started, without
+// needing a push mechanism (WebSockets/SignalR) the base spec excludes.
+const RIDES_POLL_INTERVAL_MS = 15000
 
 function greetingForNow() {
   const hour = new Date().getHours()
@@ -35,11 +42,34 @@ export function DashboardPage() {
   const [recentBookings, setRecentBookings] = useState(null)
   const [recentRatings, setRecentRatings] = useState(null)
 
-  useEffect(() => {
+  const loadRides = useCallback((isBackgroundRefresh = false) => {
     searchRides({ page: 1, pageSize: 5, sortBy: 'departureTime', sortDirection: 'asc', availableOnly: true })
-      .then((data) => setRides(data.items))
-      .catch((err) => setRidesError(err))
+      .then((data) => {
+        setRides(data.items)
+        setRidesError(null)
+      })
+      .catch((err) => {
+        // A failed background refresh keeps showing the last good list rather than
+        // replacing it with an error — only the very first load surfaces ErrorState.
+        if (!isBackgroundRefresh) setRidesError(err)
+      })
   }, [])
+
+  useEffect(() => {
+    loadRides(false)
+  }, [loadRides])
+
+  useInterval(() => loadRides(true), RIDES_POLL_INTERVAL_MS)
+
+  // Catches the "switched tabs away and back" case immediately, instead of waiting for
+  // the next poll tick.
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === 'visible') loadRides(true)
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [loadRides])
 
   useEffect(() => {
     getMyBookings()
