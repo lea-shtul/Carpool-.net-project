@@ -18,8 +18,13 @@ logs/
 *.log
 internal-nlog*.txt
 
-# Docker build artifact — the React build is copied here only inside the image
-Carpool.API/wwwroot/
+# Docker build artifact — the React build is copied here only inside the image (or if you
+# build the client yourself locally). The directory must still physically exist for
+# `dotnet run`'s static web assets tooling even when empty — without it, local dev crashes
+# at startup with DirectoryNotFoundException — so .gitkeep keeps the folder present while
+# its real contents (built JS/CSS) stay untracked.
+Carpool.API/wwwroot/*
+!Carpool.API/wwwroot/.gitkeep
 
 # OS
 Thumbs.db
