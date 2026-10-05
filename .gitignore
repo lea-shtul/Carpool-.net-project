@@ -1,0 +1,27 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+
+# Secrets & environment-specific config
+appsettings.Development.json
+appsettings.*.Local.json
+secrets.json
+*.secrets
+
+# NLog runtime output
+logs/
+*.log
+internal-nlog*.txt
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Assignment brief / reference material (kept locally, not submitted)
+*.pdf
+image (4).png

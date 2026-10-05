@@ -1,0 +1,1039 @@
+     .I want you to build the complete React frontend for my existing Carpool Web API project
+
+                                                                                                         :IMPORTANT
+        .First inspect the existing backend codebase completely before writing frontend code -
+
+                                              .Do NOT rewrite or redesign the backend business logic -
+                                                    .Do NOT invent backend endpoints that do not exist -
+
+                         .The existing backend is the source of truth for the available functionality -
+The attached image is the PRIMARY visual reference for the frontend. Recreate the overall -
+
+        visual language, layout, spacing, hierarchy, cards, sidebar, typography, filters, buttons,
+                                                                         .badges, and general UX very closely
+
+   However, this is a Carpool application, so adapt all content and functionality to my actual -
+                                                                                              .backend and domain
+
+      The screenshot is inspiration for design, not for copying the exact people, names, fake -
+                                                                                                          .data, or text
+
+                                   ==================================================
+                                                                                          PROJECT CONTEXT .1
+
+                                   ==================================================
+
+                                                                                                    :Existing solution
+
+                                                                                                                 Carpool
+                                                                                                    Carpool.API 
+                                                                                                  Carpool.Core 
+                                                                                                  Carpool.Data 
+                                                                                              Carpool.Service 
+                                                                                                 Carpool.Tests 
+
+                                                              :The backend is ASP.NET Core Web API with
+                                                                                                                NET 9. -
+
+                                                                                                         PostgreSQL -
+                                                                                                              EF Core -
+
+                                                                                     JWT Bearer authentication -
+                                                                                                         AutoMapper -
+                                                                                                                  NLog -
+
+                                                                                               BackgroundService -
+                                                                                           optimistic concurrency -
+
+                                                                                                         xUnit + Moq -
+
+                              .The React frontend should be built as a separate frontend application
+
+                                                                                          :Preferred frontend stack
+                                                                                                                 React -
+                                                                                                                    Vite -
+
+                                                                                                       React Router -
+                                                                                                                  Axios -
+
+                                                                                modern functional components -
+                                                                                                                 hooks -
+                                                                                clean component structure -
+                              plain CSS / CSS modules or another lightweight styling solution -
+
+                                         Lucide React or another lightweight icon library if useful -
+
+                                                              .Do NOT add unnecessary dependencies
+
+                             ==================================================
+                                                    MOST IMPORTANT VISUAL REQUIREMENT .2
+
+                             ==================================================
+
+                       .Use the attached dashboard screenshot as the main design reference
+
+I want the final application to feel like a polished SaaS dashboard with the same general
+                                                                                                :visual structure
+
+                                                                                       dark navy left sidebar -
+                                                                               white/light main workspace -
+
+                                                                                                rounded cards -
+                                                                                                  soft shadows -
+
+                                                                                 clean modern typography -
+                                                                                  blue primary action color -
+                                                                             large dashboard search area -
+
+                                                                                                 status badges -
+                                                                                                compact cards -
+                                                                                            generous spacing -
+                                                                                       clear visual hierarchy -
+                                                                                            responsive layout -
+                                                      professional carpool / transportation aesthetic -
+
+  .The dashboard should visually resemble the reference image very closely in structure
+
+                                                                                          :Reference structure
+
+                                                                                               :LEFT SIDEBAR
+                                                                                        Carpool logo / brand -
+
+                                                                                                     Dashboard -
+                                                                                                     Find Rides -
+
+                                                                                                       My Rides -
+                                                                                                  My Bookings -
+                                                                                                   My Vehicles -
+
+                                                                                                         Ratings -
+                                                                                                      Messages -
+
+                                                                                                           divider -
+                                                                                                           Profile -
+                                                                                                         Settings -
+                                                                                               Help & Support -
+                                                                                        bottom role indicator -
+                                                                                    :MAIN AREA
+                                                                              greeting section -
+                                                                       large ride search card -
+
+                                                                                             From -
+                                                                                                 To -
+
+                                                                                Departure date -
+                                                                        Search Rides button -
+
+                                                                                             filters -
+                                                                     promotional / hero card -
+
+                                                                          Available Rides list -
+                                                                                       ride cards -
+
+                                                                   right sidebar on desktop -
+
+                                                                             :RIGHT SIDEBAR
+                                                                              Upcoming Rides -
+
+                                                                                  My Bookings -
+                                                                               Recent Ratings -
+
+                                                                                       Help card -
+
+                                    .Do not simply create a generic admin dashboard
+.The design must clearly be a Carpool marketplace / ride-sharing application
+
+             ==================================================
+                                                             USE THE REAL BACKEND .3
+
+             ==================================================
+
+                                              :The backend API is currently available at
+
+                                                                         https://localhost:7276
+
+             .Use the existing backend API instead of mock backend endpoints
+
+                                                                           :Available endpoints
+
+                                                                                             :AUTH
+                                                                      POST /api/auth/register
+
+                                                                          POST /api/auth/login
+
+                                                                                          :USERS
+                                                                            GET /api/users/me
+
+                                                                                 GET /api/users
+                                                                PATCH /api/users/{id}/status
+
+                                                                                      :VEHICLES
+                                                                            POST /api/vehicles
+                                                                         GET /api/vehicles/my
+                                                                         }GET /api/vehicles/{id
+                                                                         }PUT /api/vehicles/{id
+                                                                                       }DELETE /api/vehicles/{id
+
+                                                                                                               :RIDES
+                                                                                                    POST /api/rides
+
+                                                                                                      GET /api/rides
+                                                                                                 }GET /api/rides/{id
+                                                                                    PATCH /api/rides/{id}/cancel
+                                                                                PATCH /api/rides/{id}/complete
+
+                                                                                                         :BOOKINGS
+                                                                             POST /api/rides/{rideId}/bookings
+
+                                                                                            GET /api/bookings/my
+                                                                                           }GET /api/bookings/{id
+                                                                              PATCH /api/bookings/{id}/cancel
+
+                                                                                                           :RATINGS
+                                                                                POST /api/rides/{rideId}/ratings
+                                                                                GET /api/users/{userId}/ratings
+
+                                                                                                                 :TAGS
+                                                                                                       GET /api/tags
+
+                                                               :Do not create imaginary endpoints such as
+                                                                                                 GET /api/rides/my
+
+                                                                                              GET /api/dashboard
+                                                                                                      GET /api/stats
+
+                                                                                               GET /api/messages
+                                                   .unless the backend is actually changed intentionally
+
+If a visual section from the reference cannot be fully supported by the backend, keep the UI
+                                                           .polished but do not fake backend functionality
+
+                                 ==================================================
+                                                                                            AUTHENTICATION .4
+
+                                 ==================================================
+
+                                                                    .Implement complete authentication flow
+
+                                                                                                               :LOGIN
+                                                                                                                email -
+                                                                                                           password -
+                                                                                      call POST /api/auth/login -
+                                                                                               save accessToken -
+                                                                                                 save user profile -
+                                                                                     store them in localStorage -
+                                                                     restore authentication on page refresh -
+
+                                                                                                         :REGISTER
+                                                                         first name -
+                                                                         last name -
+
+                                                                               email -
+                                                                         password -
+                                                                   phone number -
+                                                 call POST /api/auth/register -
+                   after successful registration guide the user to login -
+
+                                                                         .Use Axios
+
+                                                    .Create a central API client
+
+                                                               :Automatically add
+
+                                                >Authorization: Bearer <token
+
+                                                     .to authenticated requests
+
+                                                 :Handle expired / invalid JWT
+                                                                  clear local auth -
+                                                                 redirect to login -
+
+                       .Do not duplicate Axios logic across components
+
+==================================================
+                                       IMPORTANT: LOGIN RESPONSE .5
+
+==================================================
+
+                                                      :Login response contains
+
+                                                                                       {
+                                                                    ,accessToken
+                                                                    ,expiresAtUtc
+
+                                                                                user
+                                                                                       }
+
+                                                                     :User contains
+                                                                                    id -
+
+                                                                         firstName -
+                                                                         lastName -
+
+                                                                               email -
+                                                                   phoneNumber -
+
+                                                                                 role -
+                                                                            isActive -
+                                                                         createdAt -
+
+            .Use the actual logged-in user throughout the application
+                                                 .Do not hardcode "Sarah Johnson" from the screenshot
+
+                                                                    .The screenshot is only visual inspiration
+
+                                  ==================================================
+                                                                                                    DASHBOARD .6
+
+                                  ==================================================
+
+                                         .Build a polished Dashboard page inspired by the screenshot
+
+                                                                                                              :Top area
+                                                   personalized greeting using current user's first name -
+
+                                                                                      subtle secondary greeting -
+                                                                                                      avatar / initials -
+                                                                                                          role display -
+
+                                                                                                          :Search card
+                                                                                                                  From -
+                                                                                                                      To -
+
+                                                                                                     Departure date -
+                                                                                                      Search button -
+
+Search should navigate to the Find Rides page and actually use the backend GET /api/rides
+                                                                                                              .endpoint
+
+                                                                :Map UI fields to backend query parameters
+                                                                                                                 origin -
+
+                                                                                                          destination -
+                                                                                                             minPrice -
+                                                                                                            maxPrice -
+
+                                                                                                       availableOnly -
+                                                                                                                sortBy -
+
+                                                                                                        sortDirection -
+                                                                                                                  page -
+
+                                                                                                            pageSize -
+                                                                                                                  tagId -
+
+                                                                  .Do not invent unsupported backend filters
+
+                                                                                                     :Available Rides
+                                                                    .Show real rides returned by the backend
+
+                                                                                  :Each ride card should display
+                                                                                               departure time/date -
+                                                                                                                 origin -
+                                                                                                          destination -
+                                                                                                         driver name -
+
+                                                                                     available seats / total seats -
+                                                                                                       price per seat -
+                                                                                                                 status -
+                                                                                                                   tags -
+
+                                                                              vehicle information where useful -
+                                                                                               View Details button -
+
+                                                                                Book action where appropriate -
+
+                                                                                   :Use real RideResponse data
+                                                                                                                       id -
+
+                                                                                                                 origin -
+                                                                                                          destination -
+                                                                                                     departureTime -
+                                                                                                     availableSeats -
+                                                                                                           totalSeats -
+                                                                                                       pricePerSeat -
+                                                                                      estimatedDurationMinutes -
+
+                                                                                                                 status -
+                                                                                                                 driver -
+                                                                                                               vehicle -
+
+                                                                                                                   tags -
+
+                                                    .Create loading states, empty states and error states
+
+                                  ==================================================
+                                                                                             FIND RIDES PAGE .7
+
+                                  ==================================================
+
+                                                                         .Create a dedicated Find Rides page
+
+                                                                                                    :It should contain
+                                                                                                    search controls -
+
+                                                                                                                  filters -
+                                                                                                                sorting -
+                                                                                                           pagination -
+                                                                                                          ride results -
+
+                                             .The UI should feel very close to the reference screenshot
+
+                                                                               .Filtering should use the real API
+
+Pagination MUST use the backend pagination rather than loading everything and paginating
+                                                                                                        .only in React
+
+                                                                                                 :Query parameters
+                                                                                                                    page
+
+                                                                                                              pageSize
+                                                                                                                   origin
+
+                                                                                                            destination
+                                                                                 tagId
+                                                                            minPrice
+                                                                           maxPrice
+                                                                      availableOnly
+
+                                                                               sortBy
+                                                                       sortDirection
+
+                                                               :Allowed sort fields
+                                                                    departureTime
+                                                                                 price
+                                                                    availableSeats
+
+                                                         :Allowed sort directions
+                                                                                   asc
+
+                                                                                  desc
+
+                                                                                :Show
+                                                                     current page -
+
+                                                                       total pages -
+                                                                total result count -
+                                                         next/previous controls -
+
+==================================================
+                                                                RIDE DETAILS .8
+
+==================================================
+
+                              .Create a detailed Ride Details page/modal
+
+                                                                                :Show
+                                                                               route -
+                                                            departure date/time -
+                                                                           duration -
+                                                                  available seats -
+                                                                                price -
+                                                                              driver -
+                                                                             vehicle -
+                                                                                tags -
+                                                                        ride status -
+
+                                                           :If booking is possible
+                                                    :show a clear booking form
+
+                                                                number of seats -
+
+                                                                                  :Use
+                                           POST /api/rides/{rideId}/bookings
+
+                                                                     :After success
+                                                              show confirmation -
+                                                                                      update relevant UI -
+
+                        ==================================================
+                                              VERY IMPORTANT: 409 CONCURRENCY UX .9
+
+                        ==================================================
+
+            .The backend explicitly implements optimistic concurrency for limited seats
+
+                                      .Therefore the frontend MUST visibly handle HTTP 409
+
+                                                                            :When booking returns 409
+                                                                do NOT treat it like a generic error -
+                                                   :show a clear user-friendly message such as -
+                                             ".This seat was just taken by another passenger"
+                                                   explain that the ride availability has changed -
+
+                                                                    offer a way to refresh / try again -
+show the correlationId from the backend error response when useful for debugging -
+
+                                                                                   :Backend error shape
+
+                                                                                                               {
+                                                                                              ,statusCode
+
+                                                                                                 ,message
+                                                                                              correlationId
+
+                                                                                                               }
+
+                                 .Create a reusable error handling mechanism for API errors
+
+                        ==================================================
+                                                                                      MY BOOKINGS .10
+
+                        ==================================================
+
+                                                                    :Build a My Bookings page using
+
+                                                                                  GET /api/bookings/my
+
+                                                                                                        :Show
+                                                                                                booking ID -
+
+                                                                                                     ride ID -
+                                                                                            seats booked -
+
+                                                                                                      status -
+                                                                                             created date -
+                                                                       cancelled date when relevant -
+
+     .Where ride details are needed visually, use existing GET /api/rides/{id} endpoint
+
+                                                               :Allow cancellation when appropriate
+                                                                             PATCH /api/bookings/{id}/cancel
+
+                                                                                                :After cancellation
+                                                                                            refresh the booking -
+                                                                                        update UI immediately -
+                                                                                    display success feedback -
+
+                                                                                               :Clearly distinguish
+                                                                                                                Active
+
+                                                                                                           Cancelled
+                                                                                                          Completed
+
+                                ==================================================
+                                                                                                     MY RIDES .11
+
+                                ==================================================
+
+                                                            .There is no dedicated /api/rides/my endpoint
+
+                                                                                              .Do NOT invent one
+
+                                                             .Use the existing API capabilities intelligently
+
+     If necessary for the demo, fetch available ride pages and identify rides whose Driver.Id
+matches the authenticated user's ID, while being transparent in code that this is a frontend
+
+                                                  .workaround caused by the current backend contract
+
+                                                                   .Do not create a fake backend endpoint
+
+                                                                                                                :Show
+                                                                                                  upcoming rides -
+                                                                                                 completed rides -
+                                                                                                  cancelled rides -
+
+                                                                                                             :Actions
+                                                                                                        cancel ride -
+                                                                                                    complete ride -
+
+                                                                                                                  :Use
+                                                                                   PATCH /api/rides/{id}/cancel
+                                                                               PATCH /api/rides/{id}/complete
+
+              .Only show actions that are appropriate for the current user's role and ride state
+
+                                ==================================================
+                                                                                               MY VEHICLES .12
+
+                                ==================================================
+
+                                                             .Build a complete vehicle management page
+                                                                                 :GET
+                                                           GET /api/vehicles/my
+
+                                                                              :Create
+                                                              POST /api/vehicles
+
+                                                                             :Update
+                                                           }PUT /api/vehicles/{id
+
+                                                                              :Delete
+                                                     }DELETE /api/vehicles/{id
+
+                                                                     :Vehicle fields
+                                                                    manufacturer -
+
+                                                                              model -
+                                                                      licensePlate -
+                                                            passengerCapacity -
+
+                                  .Create polished cards/table for vehicles
+
+                               .Add modal or drawer forms for create/edit
+
+                                                                             :Handle
+                                                                         validation -
+                                                duplicate license plate errors -
+                                                                  delete conflicts -
+
+                                                                            loading -
+                                                                      empty state -
+
+==================================================
+                                                                      RATINGS .13
+
+==================================================
+
+                                                           .Build a Ratings page
+
+                                                                        :For a driver
+                                               GET /api/users/{userId}/ratings
+
+                              :Allow a passenger to rate a completed ride
+
+                                              POST /api/rides/{rideId}/ratings
+
+                                                                       :Rating form
+                                                                         score 1-5 -
+
+                                                              optional comment -
+
+                                                                                :Show
+                                                                                  score -
+                                                                             comment -
+
+                                                                                 ride ID -
+                                                                             createdAt -
+
+.The design should use the same visual style as the reference image
+
+   ==================================================
+                                                                          PROFILE .14
+
+   ==================================================
+
+                                                        :Build a Profile page using
+
+                                                                  GET /api/users/me
+
+                                                                                   :Show
+                                                                            first name -
+                                                                             last name -
+
+                                                                                  email -
+                                                                                 phone -
+
+                                                                                     role -
+                                                                      account status -
+
+                                                                         created date -
+
+       .Do not expose sensitive information such as password hashes
+
+   ==================================================
+                                                                         ADMIN UI .15
+
+   ==================================================
+
+         .If the current user's role is Admin, expose Admin functionality
+
+                                                                           :Admin page
+                                                                              list users -
+
+                                                        activate/deactivate users -
+
+                                                                       GET /api/users
+                                                      PATCH /api/users/{id}/status
+
+                .Normal users must not see admin-only navigation items
+
+   ==================================================
+                                         MESSAGES / SETTINGS / HELP .16
+
+   ==================================================
+
+                                                          :The screenshot contains
+                                                                            Messages -
+                                                                               Settings -
+                                                                                                  Help & Support -
+
+                                           .The current backend has no corresponding API endpoints
+
+                                                  .Do not pretend these features are fully implemented
+
+                                                                                                             :For now
+                                       keep the navigation visually present if it matches the design -
+
+                                                                             create clean placeholder pages -
+                     clearly indicate that these are not part of the current backend functionality -
+
+                                                                          .Do not invent data or API behavior
+
+                                ==================================================
+                                                                                                      ROUTING .17
+
+                                ==================================================
+
+                                                                                                .Use React Router
+
+                                                                                          :Recommended routes
+
+                                                                                                                  login/
+                                                                                                              register/
+                                                                                                          dashboard/
+
+                                                                                                                 rides/
+                                                                                                             rides/:id/
+                                                                                                            bookings/
+                                                                                                             vehicles/
+                                                                                                               ratings/
+
+                                                                                                                profile/
+                                                                                                        admin/users/
+
+                                                                                                          messages/
+                                                                                                              settings/
+                                                                                                                  help/
+
+                                                                                  .Protect authenticated routes
+
+                                                                                  .Protect admin routes by role
+
+                                                                   .Redirect unauthenticated users to /login
+
+Redirect authenticated users away from /login and /register to /dashboard unless there is a
+                                                                                               .good reason not to
+
+                                ==================================================
+                                                                        COMPONENT ARCHITECTURE .18
+
+                                ==================================================
+                                               .Create a clean scalable structure
+
+                                                                          :For example
+
+                                                                                       /src
+                                                                                     /api
+                                                                                 /assets
+                                                                         /components
+                                                                                /layout
+                                                                            /common
+                                                                                 /rides
+                                                                            /bookings
+                                                                             /vehicles
+                                                                               /ratings
+                                                                                /users
+                                                                                /context
+                                                                                 /hooks
+                                                                                 /pages
+                                                                                 /routes
+                                                                                    /utils
+                                                                                  /styles
+
+.Create reusable components instead of putting everything in App.jsx
+
+                                                                              :Examples
+                                                                                Sidebar -
+                                                                                TopBar -
+
+                                                                         SearchPanel -
+                                                                             RideCard -
+
+                                                                  RideStatusBadge -
+                                                                          EmptyState -
+
+                                                                        LoadingState -
+                                                                            ErrorState -
+                                                                                  Modal -
+
+                                                                       ConfirmDialog -
+                                                                            Pagination -
+                                                                          RatingStars -
+                                                                                   Toast -
+
+                                                                     ProtectedRoute -
+                                                                         AdminRoute -
+
+   ==================================================
+                                                                    AUTH STATE .19
+
+   ==================================================
+
+                                 .Create a centralized authentication solution
+
+                                                                             :Suggested
+                                                       )(AuthContext + useAuth
+
+                                                                 :It should provide
+                                                                                user -
+
+                                                                               token -
+                                                                 isAuthenticated -
+
+                                                                         isLoading -
+                                                                              )(login -
+
+                                                                            )(logout -
+                                                                          )(register -
+                                                                    )(refreshUser -
+
+                .Do not scatter auth logic across random components
+
+==================================================
+                                                  API ERROR HANDLING .20
+
+==================================================
+
+                                        .Create reusable API error handling
+
+                                                                             :Handle
+                                                                                   400
+                                                                                   401
+                                                                                   403
+                                                                                   404
+                                                                                   409
+                                                                                   500
+
+                                                                 :Special handling
+                                              concurrency/conflict UX  409
+
+                                                           :The backend returns
+                                                                                       {
+
+                                                                      ,statusCode
+                                                                         ,message
+
+                                                                      correlationId
+                                                                                       }
+
+                        .Display the message to the user in a clean way
+
+                              .Keep correlationId available for debugging
+
+                                  .Never display raw Axios errors to users
+
+==================================================
+                               LOADING / EMPTY / ERROR STATES .21
+
+==================================================
+                                            :Every API-driven page must have
+                                                                       loading state -
+                                                                         empty state -
+                                                                           error state -
+
+                              .Do not leave blank screens while data loads
+
+                      .Use polished skeletons or subtle loading indicators
+
+  ==================================================
+                                                     RESPONSIVE DESIGN .22
+
+  ==================================================
+
+.Desktop is the primary target because the reference is desktop-first
+
+                                                    :But make the UI responsive
+                                       sidebar collapses on smaller screens -
+
+                                                          cards become stacked -
+                    right dashboard column moves below main content -
+
+                                                             forms remain usable -
+                                                           no horizontal overflow -
+
+  ==================================================
+                                                             VISUAL DETAILS .23
+
+  ==================================================
+
+                                         :Match the reference design carefully
+
+                                                                       navy sidebar -
+                                                             blue primary buttons -
+
+                                                                         white cards -
+                                             very light gray page background -
+
+                                                       medium rounded corners -
+                                                                    subtle shadows -
+                                                                     clean dark text -
+
+                                               compact muted secondary text -
+                                                                          pill badges -
+
+                                                                  blue focus states -
+                                                                generous padding -
+                                                             clear vertical rhythm -
+
+                                                            .Use icons consistently
+
+           .Use a professional transportation/car-sharing visual theme
+
+                      .Do not create a generic bootstrap-looking interface
+
+  ==================================================
+                                           FRONTEND DATA MAPPING .24
+==================================================
+
+                  :Important backend models available to the frontend
+
+                                                                   :RideResponse
+                                                                                    id -
+
+                                                                               origin -
+                                                                       destination -
+                                                                  departureTime -
+                                                                  availableSeats -
+                                                                         totalSeats -
+                                                                     pricePerSeat -
+                                                   estimatedDurationMinutes -
+
+                                                                              status -
+                                                                         createdAt -
+                                                                          startedAt -
+                                                                     completedAt -
+                                          } driver { id, firstName, lastName -
+             } vehicle { id, manufacturer, model, passengerCapacity -
+                                                               ]} tags [{ id, name -
+
+                                                              :BookingResponse
+                                                                                    id -
+
+                                                                              rideId -
+                                                                     passengerId -
+                                                                 numberOfSeats -
+
+                                                                              status -
+                                                                         createdAt -
+                                                                      cancelledAt -
+
+                                                                :VehicleResponse
+                                                                                    id -
+
+                                                                           ownerId -
+                                                                    manufacturer -
+
+                                                                              model -
+                                                                      licensePlate -
+                                                            passengerCapacity -
+
+                                                                 :RatingResponse
+                                                                                    id -
+
+                                                                              rideId -
+                                                                        reviewerId -
+
+                                                                            driverId -
+                                                                               score -
+
+                                                                          comment -
+                                                                         createdAt -
+                                                                                                      :TagResponse
+                                                                                                                     id -
+
+                                                                                                                name -
+
+                                 ==================================================
+                                                                                   LOCAL DEVELOPMENT .25
+
+                                 ==================================================
+
+                                                                     .The backend runs on HTTPS localhost
+
+:Prefer using a Vite development proxy so frontend requests can use /api and be proxied to
+
+                                                                                             https://localhost:7276
+
+                                               .This avoids unnecessary backend CORS modifications
+
+              .Configure the proxy appropriately for the local ASP.NET development certificate
+
+                                 ==================================================
+                                                                       DO NOT BREAK THE BACKEND .26
+
+                                 ==================================================
+
+                                                                                                      :Do not modify
+                                                                                                    business rules -
+                                                                                                 database models -
+                                                                                  concurrency implementation -
+                                                                                        authentication behavior -
+                                                                                                      API contracts -
+
+ :If something truly cannot be implemented cleanly because the backend lacks an endpoint
+                                                                                                          identify it .1
+
+                                                                                    do not invent an endpoint .2
+                                                        implement the best possible frontend behavior .3
+
+                                                                                       document the limitation .4
+
+                                 ==================================================
+                                                                                                QUALITY BAR .27
+
+                                 ==================================================
+
+                                                                                  .This is not a rough prototype
+
+                   .Build the frontend from beginning to end as a polished, coherent application
+
+                                                                                                                 :I want
+                                                                                                clean architecture -
+                                                                                           reusable components -
+
+                                                                                                    readable code -
+                                                                             no huge monolithic components -
+                                                                                       no duplicated API logic -
+                                                                                no hardcoded authentication -
+
+                                                                                    no fake backend behavior -
+                                                                                     no unnecessary libraries -
+                                                                                          proper error handling -
+                                                                                          proper loading states -
+
+                                                                                  proper responsive behavior -
+                                                                                                  polished styling -
+
+                                ==================================================
+                                                                                                 WORKFLOW .28
+
+                                ==================================================
+
+                                                                           .Do NOT immediately start coding
+
+                                                                                                                 :First
+                                                                                         .Inspect the backend .1
+                                                                         .Inspect all controllers and DTOs .2
+                                                                  .Inspect the attached visual reference .3
+                                                                   .Produce a short implementation plan .4
+                                                  .Identify any backend/frontend contract limitations .5
+                                                           .Then implement the frontend incrementally .6
+
+                                                                                            :After implementation
+                                                                                                 run the frontend -
+                                                                                                   fix build errors -
+
+                                                                                       fix TypeScript/JS errors -
+                                                                                                     verify routing -
+
+                                                                                           verify authentication -
+                                                                               verify all supported API flows -
+
+                                                                                             verify 409 handling -
+                                                                                       verify responsive layout -
+
+                                                                                              :At the end, provide
+                                                                                       what files were created -
+                                                                       what functionality was implemented -
+                                                                                       any backend limitations -
+                                                                                    how to run the React app -
+                                                                               the exact command to start it -
+                                                                   any environment configuration needed -
+
+                                                                                                 :Most importantly
+PRIORITIZE VISUAL FIDELITY TO THE ATTACHED REFERENCE IMAGE while keeping
+
+                                          .the actual Carpool backend contract as the source of truth
+

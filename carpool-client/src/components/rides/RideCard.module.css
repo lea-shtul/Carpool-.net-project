@@ -1,0 +1,141 @@
+.card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-6);
+  padding: var(--space-5) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.card:last-child {
+  border-bottom: none;
+}
+
+.timeCol {
+  width: 76px;
+  flex-shrink: 0;
+}
+
+.time {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.date {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.routeCol {
+  flex: 1.3;
+  min-width: 0;
+}
+
+.routeLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.routeLine + .routeLine {
+  margin-top: 4px;
+}
+
+.dotOrigin {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-success-text);
+  flex-shrink: 0;
+}
+
+.dotDestination {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-danger-text);
+  flex-shrink: 0;
+}
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--space-2);
+}
+
+.driverCol {
+  flex: 1;
+  min-width: 140px;
+}
+
+.colLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-faint);
+  margin-bottom: 6px;
+}
+
+.driver {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.driverName {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.vehicleText {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.seatsCol {
+  width: 72px;
+  flex-shrink: 0;
+}
+
+.seatsValue {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.seatsOf {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.priceCol {
+  width: 90px;
+  flex-shrink: 0;
+}
+
+.priceValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-primary-600);
+}
+
+.actionCol {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+@media (max-width: 760px) {
+  .card {
+    flex-wrap: wrap;
+  }
+  .driverCol,
+  .seatsCol,
+  .priceCol,
+  .actionCol {
+    width: auto;
+  }
+}

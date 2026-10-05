@@ -1,0 +1,42 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.success {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+.warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+.danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
+.info {
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
+}
+.neutral {
+  background: var(--color-neutral-bg);
+  color: var(--color-neutral-text);
+}
+.global {
+  background: var(--color-global-bg);
+  color: var(--color-global-text);
+  border-color: var(--color-global-border);
+}
+.private {
+  background: var(--color-private-bg);
+  color: var(--color-private-text);
+  border-color: var(--color-private-border);
+}

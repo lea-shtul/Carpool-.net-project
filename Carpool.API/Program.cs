@@ -1,0 +1,211 @@
+using System.Reflection;
+using System.Text;
+using System.Text.Json.Serialization;
+using Carpool.API.BackgroundServices;
+using Carpool.API.Middleware;
+using Carpool.API.Swagger;
+using Carpool.Core.Configuration;
+using Carpool.Core.Entities;
+using Carpool.Core.Interfaces.Repositories;
+using Carpool.Core.Interfaces.Security;
+using Carpool.Core.Interfaces.Services;
+using Carpool.Data;
+using Carpool.Data.Repositories;
+using Carpool.Service.Mapping;
+using Carpool.Service.Security;
+using Carpool.Service.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using NLog;
+using NLog.Web;
+
+// Bootstrap NLog before the host is built so a startup failure is still logged (spec §57).
+var logger = NLog.LogManager.Setup()
+    .LoadConfigurationFromFile("nlog.config")
+    .GetCurrentClassLogger();
+
+try
+{
+    logger.Info("Carpool API starting up.");
+
+    var builder = WebApplication.CreateBuilder(args);
+
+    // Route every ILogger<T> through NLog (spec §57).
+    builder.Logging.ClearProviders();
+    builder.Host.UseNLog();
+
+    // Add services to the container.
+
+    // Serialize enums (Role, RideStatus, BookingStatus) as their names, not integers.
+    builder.Services
+        .AddControllers()
+        .AddJsonOptions(options =>
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+    // Swagger / OpenAPI (spec §61). Every endpoint is documented (XML comments), the common
+    // error responses are added by an operation filter, and a Bearer scheme lets protected
+    // endpoints be exercised from the UI.
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(options =>
+    {
+        options.SwaggerDoc("v1", new OpenApiInfo
+        {
+            Title = "Carpool API",
+            Version = "v1",
+            Description = "Ride-sharing Web API — authentication, vehicles, rides, seat booking "
+                          + "with optimistic concurrency, ratings and tags.",
+        });
+
+        foreach (var assembly in new[] { Assembly.GetExecutingAssembly(), typeof(JwtOptions).Assembly })
+        {
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, $"{assembly.GetName().Name}.xml");
+            if (File.Exists(xmlPath))
+            {
+                options.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+            }
+        }
+
+        var bearerScheme = new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "Paste the JWT returned by POST /api/auth/login (no 'Bearer ' prefix needed).",
+            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" },
+        };
+        options.AddSecurityDefinition("Bearer", bearerScheme);
+        options.AddSecurityRequirement(new OpenApiSecurityRequirement { [bearerScheme] = Array.Empty<string>() });
+
+        options.OperationFilter<DefaultErrorResponsesOperationFilter>();
+    });
+
+    // EF Core / PostgreSQL. The connection string is read from configuration
+    // (User Secrets in Development, environment variables otherwise) — never hard-coded
+    // (spec §44, §48). DbContext is registered with the default Scoped lifetime (spec §53).
+    builder.Services.AddDbContext<CarpoolDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("CarpoolDb")));
+
+    // Repositories and the unit of work (spec §52, §53). Registered Scoped — the same
+    // lifetime as CarpoolDbContext, which they all depend on.
+    builder.Services.AddScoped<IUnitOfWork, CarpoolUnitOfWork>();
+    builder.Services.AddScoped<IUserRepository, UserRepository>();
+    builder.Services.AddScoped<IVehicleRepository, VehicleRepository>();
+    builder.Services.AddScoped<IRideRepository, RideRepository>();
+    builder.Services.AddScoped<IBookingRepository, BookingRepository>();
+    builder.Services.AddScoped<IRatingRepository, RatingRepository>();
+    builder.Services.AddScoped<ITagRepository, TagRepository>();
+
+    // AutoMapper profiles live in Carpool.Service/Mapping (spec §34). AutoMapper 13+ requires
+    // the configuration-action overload; AddMaps scans the assembly for Profile classes.
+    builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(TagProfile).Assembly));
+
+    // Business services (spec §36, §53). Registered Scoped alongside their repositories.
+    builder.Services.AddScoped<ITagService, TagService>();
+    builder.Services.AddScoped<IUserService, UserService>();
+    builder.Services.AddScoped<IVehicleService, VehicleService>();
+    builder.Services.AddScoped<IRideService, RideService>();
+    builder.Services.AddScoped<IBookingService, BookingService>();
+    builder.Services.AddScoped<IRatingService, RatingService>();
+    builder.Services.AddScoped<IRideStatusService, RideStatusService>();
+
+    // Time-driven ride status automation (spec §15, §16).
+    builder.Services.AddHostedService<RideStatusBackgroundService>();
+
+    // --- Authentication & authorization (spec §39–§41) ---
+
+    // JWT settings: Issuer/Audience/ExpiryMinutes from appsettings.json, Key from User Secrets.
+    var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);
+    builder.Services.Configure<JwtOptions>(jwtSection);
+    var jwtOptions = jwtSection.Get<JwtOptions>()
+        ?? throw new InvalidOperationException("The 'Jwt' configuration section is missing.");
+    if (string.IsNullOrWhiteSpace(jwtOptions.Key))
+    {
+        throw new InvalidOperationException(
+            "Jwt:Key is not configured. Set it via User Secrets: dotnet user-secrets set \"Jwt:Key\" \"<secret>\".");
+    }
+
+    builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+    builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+    builder.Services.AddScoped<IAuthService, AuthService>();
+
+    builder.Services
+        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
+        {
+            // Keep the token's claim names verbatim ("sub", "email", "role") instead of the
+            // legacy WS-* URI remapping, so controllers can read them by their JWT names (spec §40).
+            options.MapInboundClaims = false;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = jwtOptions.Issuer,
+                ValidateAudience = true,
+                ValidAudience = jwtOptions.Audience,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
+                ClockSkew = TimeSpan.FromSeconds(30),
+                NameClaimType = JwtRegisteredClaimNames.Sub,
+                RoleClaimType = System.Security.Claims.ClaimTypes.Role,
+            };
+        });
+
+    builder.Services.AddAuthorization();
+
+    var app = builder.Build();
+
+    // Configure the HTTP request pipeline.
+    if (app.Environment.IsDevelopment())
+    {
+        // Apply any pending migrations on startup so the project runs immediately after
+        // database setup (spec §48). Development only, inside its own DI scope so we never
+        // hold a Scoped DbContext outside a scope (spec §53).
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<CarpoolDbContext>();
+            await db.Database.MigrateAsync();
+        }
+
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Carpool API v1");
+            options.DocumentTitle = "Carpool API";
+        });
+    }
+
+    // Middleware order matters (spec §56):
+    //  - exception handling outermost, so it catches everything downstream;
+    //  - correlation id next, so it is available to request/error logging;
+    //  - request logging next, so every request is logged with its correlation id;
+    //  - then the framework pipeline; authentication before authorization.
+    app.UseMiddleware<ExceptionHandlingMiddleware>();
+    app.UseMiddleware<CorrelationIdMiddleware>();
+    app.UseMiddleware<RequestLoggingMiddleware>();
+
+    app.UseHttpsRedirection();
+
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    app.MapControllers();
+
+    app.Run();
+}
+catch (Exception exception)
+{
+    // A host-startup failure never reaches the exception middleware — log it here (spec §58).
+    logger.Error(exception, "Carpool API terminated unexpectedly during startup.");
+    throw;
+}
+finally
+{
+    // Flush and release buffered log entries on shutdown.
+    NLog.LogManager.Shutdown();
+}
