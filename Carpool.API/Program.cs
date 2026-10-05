@@ -32,23 +32,6 @@ try
 {
     logger.Info("Carpool API starting up.");
 
-    // Render (and most cloud Postgres providers) hand out a connection URI —
-    // postgres://user:password@host:port/database — rather than the key=value string
-    // Npgsql expects. SSL Mode=Require is needed for Render's managed Postgres, which
-    // only accepts TLS connections; Trust Server Certificate avoids shipping its CA bundle
-    // for what is, here, a student deployment rather than a hardened production one.
-    static string BuildConnectionStringFromDatabaseUrl(string databaseUrl)
-    {
-        var uri = new Uri(databaseUrl);
-        var userInfo = uri.UserInfo.Split(':', 2);
-        var username = Uri.UnescapeDataString(userInfo[0]);
-        var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
-        var database = uri.AbsolutePath.TrimStart('/');
-
-        return $"Host={uri.Host};Port={uri.Port};Database={database};Username={username};" +
-               $"Password={password};SSL Mode=Require;Trust Server Certificate=true";
-    }
-
     var builder = WebApplication.CreateBuilder(args);
 
     // Route every ILogger<T> through NLog (spec §57).
@@ -116,7 +99,7 @@ try
         var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
         if (!string.IsNullOrWhiteSpace(databaseUrl))
         {
-            connectionString = BuildConnectionStringFromDatabaseUrl(databaseUrl);
+            connectionString = DatabaseUrlConverter.ToNpgsqlConnectionString(databaseUrl);
         }
     }
 

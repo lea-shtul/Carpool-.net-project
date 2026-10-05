@@ -293,8 +293,11 @@ Key differences from local dev, all in `Program.cs`: migrations run on startup i
 environment (a container has no separate migration step); Swagger stays enabled in
 Production; `UseHttpsRedirection` is skipped outside Development (the platform's edge
 terminates TLS); and if `ConnectionStrings:CarpoolDb` is empty, a connection string is
-built from a `DATABASE_URL` env var (the `postgres://user:pass@host:port/db` shape most
-managed Postgres providers hand out) instead.
+built from a `DATABASE_URL` env var via `DatabaseUrlConverter` (`Carpool.Core/Configuration`)
+instead — the `postgres://user:pass@host[:port]/db` shape most managed Postgres providers
+hand out. The port is optional: Render's *Internal* Database URL omits it (defaults to
+5432), and the connection uses `SSL Mode=Prefer` rather than `Require` since Render's
+internal network connections aren't necessarily TLS.
 
 ---
 
