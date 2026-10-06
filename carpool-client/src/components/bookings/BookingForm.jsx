@@ -1,7 +1,7 @@
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { createBooking } from '../../api/bookings'
-import { isConcurrencyConflict } from '../../api/errors'
+import { isConcurrencyConflict, isDuplicateBookingConflict } from '../../api/errors'
 import { Button } from '../common/Button'
 import { FormField, TextInput } from '../common/FormField'
 import { useToast } from '../../hooks/useToast'
@@ -30,7 +30,13 @@ export function BookingForm({ ride, onBooked, onRefreshRide }) {
       showToast({ type: 'success', message: `Booked ${numberOfSeats} seat(s) on this ride.` })
       onBooked?.(booking)
     } catch (err) {
-      if (isConcurrencyConflict(err)) {
+      // Checked first and separately from isConcurrencyConflict (not "else"): both are 409s
+      // from this same endpoint, but a stale "you already booked this" is a different, more
+      // mundane situation than "someone else just took the seat" and needs its own message
+      // rather than the concurrency banner.
+      if (isDuplicateBookingConflict(err)) {
+        setError(err.message)
+      } else if (isConcurrencyConflict(err)) {
         setConflict(err)
       } else {
         setError(err.message)

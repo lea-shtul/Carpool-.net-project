@@ -13,9 +13,21 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * True specifically for "you already have an active booking for this ride" (spec §26) — a
+ * 409 from the same POST /api/rides/{id}/bookings endpoint as a real concurrency conflict,
+ * but a different situation entirely (nobody raced you; your own earlier booking is still
+ * active). The backend's error body has no machine-readable error code (the fixed
+ * {statusCode, message, correlationId} shape), so this is distinguished by message text —
+ * which is a stable, hard-coded literal in BookingService.CreateAsync, not user input.
+ */
+export function isDuplicateBookingConflict(error) {
+  return error instanceof ApiError && error.status === 409 && /already have an active booking/i.test(error.message)
+}
+
 /** True for the "seat taken by someone else" optimistic-concurrency conflict (spec extension UX). */
 export function isConcurrencyConflict(error) {
-  return error instanceof ApiError && error.status === 409
+  return error instanceof ApiError && error.status === 409 && !isDuplicateBookingConflict(error)
 }
 
 export function toApiError(axiosError) {

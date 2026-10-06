@@ -1,6 +1,7 @@
-import { CarFront, Clock, MapPin, Users } from 'lucide-react'
+import { CarFront, CheckCircle2, Clock, MapPin, Users } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { getMyBookings } from '../api/bookings'
 import { cancelRide, completeRide, getRide } from '../api/rides'
 import { BookingForm } from '../components/bookings/BookingForm'
 import { Avatar } from '../components/common/Avatar'
@@ -26,6 +27,8 @@ export function RideDetailsPage() {
   const [error, setError] = useState(null)
   const [hasRated, setHasRated] = useState(false)
   const [isActing, setIsActing] = useState(false)
+  // null while loading, undefined once loaded-with-no-active-booking, or the booking itself.
+  const [myActiveBooking, setMyActiveBooking] = useState(null)
 
   const loadRide = useCallback(() => {
     setError(null)
@@ -38,11 +41,23 @@ export function RideDetailsPage() {
     loadRide()
   }, [loadRide])
 
+  useEffect(() => {
+    getMyBookings()
+      .then((bookings) => {
+        const active = bookings.find((b) => b.rideId === Number(id) && b.status === 'Active')
+        setMyActiveBooking(active ?? undefined)
+      })
+      .catch(() => setMyActiveBooking(undefined))
+  }, [id])
+
   if (error) return <ErrorState message={error.message} correlationId={error.correlationId} onRetry={loadRide} />
   if (!ride) return <LoadingState count={2} />
 
   const isDriver = ride.driver.id === user?.id
-  const canBook = !isDriver && ride.status === 'Scheduled' && ride.availableSeats > 0
+  // Also gated on myActiveBooking being resolved (not null = still loading), so the form
+  // never flashes before we know whether the caller already booked this ride.
+  const canBook =
+    !isDriver && ride.status === 'Scheduled' && ride.availableSeats > 0 && myActiveBooking === undefined
   const canRate = !isDriver && ride.status === 'Completed' && !hasRated
 
   async function handleCancelRide() {
@@ -159,13 +174,33 @@ export function RideDetailsPage() {
               </div>
               <BookingForm
                 ride={ride}
-                onBooked={() => loadRide()}
+                onBooked={(booking) => {
+                  setMyActiveBooking(booking)
+                  loadRide()
+                }}
                 onRefreshRide={loadRide}
               />
             </Card>
           )}
 
-          {!canBook && !isDriver && ride.status === 'Scheduled' && ride.availableSeats === 0 && (
+          {!isDriver && myActiveBooking && (
+            <Card>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--color-success-text)' }}>
+                <CheckCircle2 size={18} />
+                <strong style={{ fontSize: 13.5 }}>You're booked on this ride</strong>
+              </div>
+              <p style={{ fontSize: 12.5, color: 'var(--color-text-muted)', marginTop: 'var(--space-2)' }}>
+                {myActiveBooking.numberOfSeats} seat(s) reserved.
+              </p>
+              <div style={{ marginTop: 'var(--space-3)' }}>
+                <Button size="sm" variant="secondary" onClick={() => navigate('/bookings')}>
+                  View My Bookings
+                </Button>
+              </div>
+            </Card>
+          )}
+
+          {!isDriver && !myActiveBooking && ride.status === 'Scheduled' && ride.availableSeats === 0 && (
             <Card>
               <p style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>This ride is fully booked.</p>
             </Card>
