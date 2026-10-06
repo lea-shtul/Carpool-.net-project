@@ -1,13 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { cancelBooking, getMyBookings } from '../api/bookings'
 import { BookingCard } from '../components/bookings/BookingCard'
 import { Card } from '../components/common/Card'
 import { ConfirmDialog } from '../components/common/ConfirmDialog'
 import { EmptyState, ErrorState, LoadingState } from '../components/common/States'
 import { useApiErrorToast, useToast } from '../hooks/useToast'
+import { useInterval } from '../hooks/useInterval'
 import styles from './MyBookingsPage.module.css'
 
 const TABS = ['All', 'Active', 'Completed', 'Cancelled']
+
+// Mirrors the Dashboard's polling (DashboardPage.jsx) — a booking's own status also
+// changes on its own (e.g. Active -> Completed once the ride finishes), not just the
+// nested ride status each BookingCard polls independently.
+const BOOKINGS_POLL_INTERVAL_MS = 15000
 
 export function MyBookingsPage() {
   const { showToast } = useToast()
@@ -18,14 +24,32 @@ export function MyBookingsPage() {
   const [pendingCancel, setPendingCancel] = useState(null)
   const [isCancelling, setIsCancelling] = useState(false)
 
-  function load() {
-    setError(null)
+  const load = useCallback((isBackgroundRefresh = false) => {
     getMyBookings()
-      .then(setBookings)
-      .catch((err) => setError(err))
-  }
+      .then((data) => {
+        setBookings(data)
+        setError(null)
+      })
+      .catch((err) => {
+        // A failed background refresh keeps showing the last good list rather than
+        // replacing it with an error — only the very first load surfaces ErrorState.
+        if (!isBackgroundRefresh) setError(err)
+      })
+  }, [])
 
-  useEffect(load, [])
+  useEffect(() => {
+    load(false)
+  }, [load])
+
+  useInterval(() => load(true), BOOKINGS_POLL_INTERVAL_MS)
+
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === 'visible') load(true)
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [load])
 
   async function confirmCancel() {
     setIsCancelling(true)
