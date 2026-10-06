@@ -15,3 +15,8 @@ export function getBooking(id) {
 export function cancelBooking(id) {
   return apiClient.patch(`/bookings/${id}/cancel`).then((r) => r.data)
 }
+
+/** Driver-only (or Admin): every booking on a ride, passenger names included. Spec extension. */
+export function getBookingsForRide(rideId) {
+  return apiClient.get(`/rides/${rideId}/bookings`).then((r) => r.data)
+}

@@ -1,9 +1,10 @@
-import { CarFront, CheckCircle2, Clock, MapPin, Users } from 'lucide-react'
+import { CarFront, CheckCircle2, Clock, MapPin, Users, UsersRound } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getMyBookings } from '../api/bookings'
 import { cancelRide, completeRide, getRide } from '../api/rides'
 import { BookingForm } from '../components/bookings/BookingForm'
+import { RideBookingsPanel } from '../components/bookings/RideBookingsPanel'
 import { Avatar } from '../components/common/Avatar'
 import { RideStatusBadge } from '../components/common/Badge'
 import { Button } from '../components/common/Button'
@@ -29,6 +30,7 @@ export function RideDetailsPage() {
   const [isActing, setIsActing] = useState(false)
   // null while loading, undefined once loaded-with-no-active-booking, or the booking itself.
   const [myActiveBooking, setMyActiveBooking] = useState(null)
+  const [showBookings, setShowBookings] = useState(false)
 
   const loadRide = useCallback(() => {
     setError(null)
@@ -154,14 +156,34 @@ export function RideDetailsPage() {
             </div>
           )}
 
-          {isDriver && ride.status === 'Scheduled' && (
-            <div className={styles.section} style={{ display: 'flex', gap: 'var(--space-2)' }}>
-              <Button variant="secondary" isLoading={isActing} onClick={handleCompleteRide}>
-                Mark as Completed
+          {isDriver && (
+            <div className={styles.section} style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+              {ride.status === 'Scheduled' && (
+                <>
+                  <Button variant="secondary" isLoading={isActing} onClick={handleCompleteRide}>
+                    Mark as Completed
+                  </Button>
+                  <Button variant="danger" isLoading={isActing} onClick={handleCancelRide}>
+                    Cancel Ride
+                  </Button>
+                </>
+              )}
+              <Button
+                variant="secondary"
+                icon={UsersRound}
+                onClick={() => setShowBookings((v) => !v)}
+              >
+                {showBookings ? 'Hide Bookings' : 'View Bookings'}
               </Button>
-              <Button variant="danger" isLoading={isActing} onClick={handleCancelRide}>
-                Cancel Ride
-              </Button>
+            </div>
+          )}
+
+          {isDriver && showBookings && (
+            <div className={styles.section}>
+              <div className={styles.sectionLabel} style={{ marginBottom: 'var(--space-3)' }}>
+                Who booked this ride
+              </div>
+              <RideBookingsPanel rideId={ride.id} />
             </div>
           )}
         </Card>

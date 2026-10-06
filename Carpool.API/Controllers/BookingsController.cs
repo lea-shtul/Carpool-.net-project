@@ -36,6 +36,19 @@ public class BookingsController : ApiControllerBase
         return CreatedAtAction(nameof(GetById), new { id = booking.Id }, booking);
     }
 
+    /// <summary>
+    /// GET /api/rides/{rideId}/bookings — every booking on the ride, passenger names
+    /// included. The ride's driver, or an Admin, only. Not part of the base spec.
+    /// </summary>
+    [HttpGet("rides/{rideId:int}/bookings")]
+    public async Task<ActionResult<IEnumerable<RideBookingResponse>>> GetForRide(
+        [FromRoute] int rideId,
+        CancellationToken cancellationToken)
+    {
+        var bookings = await _bookingService.GetForRideAsync(rideId, CurrentUserId, CurrentUserRole, cancellationToken);
+        return Ok(bookings);
+    }
+
     /// <summary>GET /api/bookings/my — the authenticated user's bookings.</summary>
     [HttpGet("bookings/my")]
     public async Task<ActionResult<IEnumerable<BookingResponse>>> GetMine(CancellationToken cancellationToken)

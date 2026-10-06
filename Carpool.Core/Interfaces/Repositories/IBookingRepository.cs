@@ -16,6 +16,12 @@ public interface IBookingRepository
     /// <summary>All Active bookings for a ride — used when a ride is cancelled or completed (spec §14, §18).</summary>
     Task<IEnumerable<Booking>> GetActiveByRideAsync(int rideId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Every booking on a ride (any status), passenger included, for the driver's "who
+    /// booked my ride" view. Not part of the base spec — see SPEC-COMPLIANCE.md.
+    /// </summary>
+    Task<IEnumerable<Booking>> GetByRideAsync(int rideId, CancellationToken cancellationToken);
+
     Task AddAsync(Booking booking, CancellationToken cancellationToken);
 
     void Update(Booking booking);

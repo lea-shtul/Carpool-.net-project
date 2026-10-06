@@ -75,5 +75,7 @@ public static class TestData
         NumberOfSeats = numberOfSeats,
         Status = status,
         CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+        // Minimal nav so Booking -> RideBookingResponse mapping works in tests that assert on the DTO.
+        Passenger = User(passengerId),
     };
 }

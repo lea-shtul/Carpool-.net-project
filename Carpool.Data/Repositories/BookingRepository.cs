@@ -56,6 +56,18 @@ public class BookingRepository : IBookingRepository
             .Where(b => b.RideId == rideId && b.Status == BookingStatus.Active)
             .ToListAsync(cancellationToken);
 
+    /// <summary>
+    /// Read-only listing (any status) backing the driver's <c>GET /api/rides/{rideId}/bookings</c>
+    /// view. Loads the passenger in the same query to avoid N+1 (spec §20, extended).
+    /// </summary>
+    public async Task<IEnumerable<Booking>> GetByRideAsync(int rideId, CancellationToken cancellationToken) =>
+        await _context.Bookings
+            .AsNoTracking()
+            .Include(b => b.Passenger)
+            .Where(b => b.RideId == rideId)
+            .OrderByDescending(b => b.CreatedAt)
+            .ToListAsync(cancellationToken);
+
     public async Task AddAsync(Booking booking, CancellationToken cancellationToken) =>
         await _context.Bookings.AddAsync(booking, cancellationToken);
 

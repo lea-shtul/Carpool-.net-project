@@ -119,6 +119,23 @@ public class BookingService : IBookingService
         return _mapper.Map<BookingResponse>(booking);
     }
 
+    public async Task<IEnumerable<RideBookingResponse>> GetForRideAsync(
+        int rideId, int currentUserId, UserRole currentUserRole, CancellationToken cancellationToken)
+    {
+        var ride = await _rideRepository.GetByIdAsync(rideId, cancellationToken)
+            ?? throw new NotFoundException($"Ride {rideId} was not found.");
+
+        // Only the ride's own driver may see who booked it — no passenger, and no other
+        // driver, gets this view. Admin keeps the same bypass used elsewhere (spec §43).
+        if (ride.DriverId != currentUserId && currentUserRole != UserRole.Admin)
+        {
+            throw new ForbiddenException("Only the ride's driver can view its bookings.");
+        }
+
+        var bookings = await _bookingRepository.GetByRideAsync(rideId, cancellationToken);
+        return _mapper.Map<IEnumerable<RideBookingResponse>>(bookings);
+    }
+
     public async Task<BookingResponse> CancelAsync(int bookingId, int currentUserId, CancellationToken cancellationToken)
     {
         var booking = await _bookingRepository.GetByIdAsync(bookingId, cancellationToken)

@@ -23,6 +23,13 @@ public interface IBookingService
     Task<BookingResponse> GetByIdAsync(int bookingId, int currentUserId, UserRole currentUserRole, CancellationToken cancellationToken);
 
     /// <summary>
+    /// <c>GET /api/rides/{rideId}/bookings</c>. Every booking on the ride, passenger names
+    /// included. The ride's driver, or an Admin, only — not part of the base spec.
+    /// </summary>
+    Task<IEnumerable<RideBookingResponse>> GetForRideAsync(
+        int rideId, int currentUserId, UserRole currentUserRole, CancellationToken cancellationToken);
+
+    /// <summary>
     /// <c>PATCH /api/bookings/{id}/cancel</c>. Owner only; allowed only while the
     /// booking is Active and the ride is still Scheduled. Transactionally sets the
     /// booking to Cancelled and returns its seats to the ride (spec §25, §68).

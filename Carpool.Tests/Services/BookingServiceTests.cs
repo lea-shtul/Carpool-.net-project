@@ -214,4 +214,55 @@ public class BookingServiceTests
 
         Assert.Equal(7, result.Id);
     }
+
+    // --- GetForRideAsync (spec extension — driver's view of a ride's bookings) --------
+
+    [Fact]
+    public async Task GetForRideAsync_AsTheDriver_ReturnsBookingsWithPassengerNames()
+    {
+        var ride = TestData.Ride(RideId, Driver);
+        RideExists(ride);
+        var booking = TestData.Booking(7, RideId, Passenger, numberOfSeats: 2);
+        _bookings.Setup(b => b.GetByRideAsync(RideId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { booking });
+
+        var result = (await CreateSut().GetForRideAsync(RideId, Driver, UserRole.User, default)).ToList();
+
+        Assert.Single(result);
+        Assert.Equal(2, result[0].NumberOfSeats);
+        Assert.Equal($"First{Passenger}", result[0].Passenger.FirstName);
+        Assert.Equal(Passenger, result[0].Passenger.Id);
+    }
+
+    [Fact]
+    public async Task GetForRideAsync_AsAdmin_ReturnsBookingsOfSomeoneElsesRide()
+    {
+        var ride = TestData.Ride(RideId, Driver);
+        RideExists(ride);
+        _bookings.Setup(b => b.GetByRideAsync(RideId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { TestData.Booking(7, RideId, Passenger) });
+
+        var result = await CreateSut().GetForRideAsync(RideId, currentUserId: 999, UserRole.Admin, default);
+
+        Assert.Single(result);
+    }
+
+    [Fact]
+    public async Task GetForRideAsync_WhenCallerIsNeitherDriverNorAdmin_ThrowsForbidden()
+    {
+        var ride = TestData.Ride(RideId, Driver);
+        RideExists(ride);
+
+        await Assert.ThrowsAsync<ForbiddenException>(() =>
+            CreateSut().GetForRideAsync(RideId, currentUserId: Passenger, UserRole.User, default));
+
+        _bookings.Verify(b => b.GetByRideAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetForRideAsync_WhenRideDoesNotExist_ThrowsNotFound()
+    {
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            CreateSut().GetForRideAsync(RideId, Driver, UserRole.User, default));
+    }
 }

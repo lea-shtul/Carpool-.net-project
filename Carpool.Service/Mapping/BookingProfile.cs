@@ -15,6 +15,10 @@ public class BookingProfile : Profile
     {
         CreateMap<Booking, BookingResponse>();
 
+        // Driver's view (GET /api/rides/{rideId}/bookings) — includes the passenger's name.
+        CreateMap<Booking, RideBookingResponse>();
+        CreateMap<User, RideBookingPassengerInfo>();
+
         CreateMap<CreateBookingRequest, Booking>()
             .ForMember(d => d.Id, o => o.Ignore())
             .ForMember(d => d.RideId, o => o.Ignore())
