@@ -173,6 +173,19 @@ try
 
     builder.Services.AddAuthorization();
 
+var allowedOrigins = builder.Configuration["Cors:AllowedOrigins"]?
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    ?? Array.Empty<string>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Client", policy =>
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
+
+
     var app = builder.Build();
 
     // Configure the HTTP request pipeline.
@@ -212,6 +225,9 @@ try
         app.UseHttpsRedirection();
     }
 
+
+app.UseCors("Client");
+
     app.UseAuthentication();
     app.UseAuthorization();
 
@@ -221,9 +237,7 @@ try
     // routing own every path that isn't an API route or a real static file, so a hard refresh
     // on e.g. /rides/3 still resolves to index.html instead of a 404 (spec extension — see
     // the Dockerfile).
-    app.UseDefaultFiles();
-    app.UseStaticFiles();
-    app.MapFallbackToFile("index.html");
+    
 
     app.Run();
 }
